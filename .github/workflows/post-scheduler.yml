@@ -30,3 +30,11 @@ jobs:
           GH_PAT: ${{ secrets.GH_PAT }}
           GH_REPO: ${{ github.repository }}
         run: python scripts/post_tweet.py
+      - name: Heartbeat commit (keep repo active)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC')" > heartbeat.txt
+          git add heartbeat.txt
+          git commit -m "heartbeat: $(date -u '+%Y-%m-%d %H:%M')" || echo "no changes"
+          git push
