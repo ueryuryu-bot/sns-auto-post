@@ -1,9 +1,5 @@
 name: Tweet Auto Poster
 on:
-  schedule:
-    - cron: '50 23 * * *'
-    - cron: '50 5 * * *'
-    - cron: '50 11 * * *'
   workflow_dispatch:
     inputs:
       start_time:
