@@ -60,7 +60,7 @@ for schedule_path in schedule_files:
             continue
         tgt_h, tgt_m = map(int, post["time_jst"].split(":"))
         tgt_total = tgt_h * 60 + tgt_m
-        if tgt_total <= now_total < tgt_total + 10:
+        if tgt_total - 10 <= now_total < tgt_total + 10:
             try:
                 res = client.create_tweet(text=post["text"])
                 url = f"https://x.com/{acct['username']}/status/{res.data['id']}"
