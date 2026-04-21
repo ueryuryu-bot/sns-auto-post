@@ -1,11 +1,21 @@
 name: Tweet Auto Poster
 on:
   schedule:
-    - cron: '0,20,40 * * * *'
+    - cron: '50 23 * * *'
+    - cron: '50 5 * * *'
+    - cron: '50 11 * * *'
   workflow_dispatch:
+    inputs:
+      start_time:
+        description: 'Start time JST (HH:MM)'
+        default: '00:00'
+      end_time:
+        description: 'End time JST (HH:MM)'
+        default: '23:59'
 jobs:
   post:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     permissions:
       contents: write
     steps:
@@ -16,6 +26,25 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install tweepy requests
+      - name: Determine time range
+        id: timerange
+        run: |
+          HOUR=$(TZ=Asia/Tokyo date +%H)
+          MIN=$(TZ=Asia/Tokyo date +%M)
+          TOTAL=$((10#$HOUR * 60 + 10#$MIN))
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "start=${{ github.event.inputs.start_time }}" >> $GITHUB_OUTPUT
+            echo "end=${{ github.event.inputs.end_time }}" >> $GITHUB_OUTPUT
+          elif [ $TOTAL -ge 1430 ] || [ $TOTAL -lt 290 ]; then
+            echo "start=09:00" >> $GITHUB_OUTPUT
+            echo "end=14:45" >> $GITHUB_OUTPUT
+          elif [ $TOTAL -ge 290 ] && [ $TOTAL -lt 590 ]; then
+            echo "start=15:00" >> $GITHUB_OUTPUT
+            echo "end=20:45" >> $GITHUB_OUTPUT
+          else
+            echo "start=21:00" >> $GITHUB_OUTPUT
+            echo "end=23:55" >> $GITHUB_OUTPUT
+          fi
       - name: Run post scheduler
         env:
           AZABU_API_KEY: ${{ secrets.AZABU_API_KEY }}
@@ -29,12 +58,4 @@ jobs:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           GH_PAT: ${{ secrets.GH_PAT }}
           GH_REPO: ${{ github.repository }}
-        run: python scripts/post_tweet.py
-      - name: Heartbeat commit (keep repo active)
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC')" > heartbeat.txt
-          git add heartbeat.txt
-          git commit -m "heartbeat: $(date -u '+%Y-%m-%d %H:%M')" || echo "no changes"
-          git push
+        run: python scripts/post_tweet.py ${{ steps.timerange.outputs.start }} ${{ steps.timerange.outputs.end }}
