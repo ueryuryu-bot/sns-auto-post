@@ -1,0 +1,29 @@
+name: Daily Draft Sender
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # JST 18:00 (UTC 09:00)
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: '対象日付（YYYYMMDD、空欄=翌日）'
+        required: false
+
+jobs:
+  send-drafts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install requests pytz
+
+      - name: Send drafts to Discord
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        run: python scripts/send_drafts_discord.py
