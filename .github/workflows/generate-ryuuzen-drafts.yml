@@ -1,0 +1,36 @@
+name: Generate Ryuuzen Drafts
+
+on:
+  schedule:
+    - cron: '0 7 * * *'  # JST 16:00 (UTC 07:00) - 18:00の2時間前
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: '対象日付（YYYYMMDD、空欄=翌日）'
+        required: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install requests pytz
+
+      - name: Generate ryuuzen drafts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [ -n "${{ github.event.inputs.target_date }}" ]; then
+            python scripts/generate_ryuuzen_drafts.py ${{ github.event.inputs.target_date }}
+          else
+            python scripts/generate_ryuuzen_drafts.py
+          fi
