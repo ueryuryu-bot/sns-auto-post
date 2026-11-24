@@ -1,0 +1,26 @@
+name: Generate Ryuuzen Note Article
+
+on:
+  schedule:
+    - cron: '0 0 * * 0,3'  # JST 9:00 水曜・日曜 (UTC 0:00 Sun,Wed)
+  workflow_dispatch:
+
+jobs:
+  generate-note:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install requests pytz
+
+      - name: Generate note article and send to Discord
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+        run: python scripts/generate_ryuuzen_note.py
